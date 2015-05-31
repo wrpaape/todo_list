@@ -309,10 +309,10 @@ class TodoListTool
   def disp_existing_todos
     TodoList.all.each do |todolist|
       puts todolist.id.to_s + ") #{todolist.title}"
-      puts "   · created on:         " + todolist.created_at.to_s
-      puts "   · last updated on on: " + todolist.updated_at.to_s
+      puts "   · created on:      " + todolist.created_at.to_s
+      puts "   · last updated on: " + todolist.updated_at.to_s
       puts " "
-      puts center_msg("", "¯", ("   · last updated on on: " + todolist.updated_at.to_s).size)
+      puts center_msg("", "¯", ("   · last updated on: " + todolist.updated_at.to_s).size + 1)
     end
     puts " "
   end
