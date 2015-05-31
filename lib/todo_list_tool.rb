@@ -3,8 +3,6 @@ require_relative "todo_list"
 
 
 class TodoListTool
-  TERM_WIDTH = `tput cols`.chomp.to_i
-
   def startup!
     begin
       disp_header
@@ -18,7 +16,7 @@ class TodoListTool
       case input
       when 1
         disp_header
-        print "Enter New Todo List Title"
+        puts "Enter New Todo List Title"
         print "\n> "
         new_todo(gets.chomp)
       when 2
@@ -32,7 +30,7 @@ class TodoListTool
         disp_existing_todos
         puts "Which Todo Would you Like to Delete?"
         print "\n> "
-        delete_todo(gets.chomp.to_i)
+        delete_todo_list(gets.chomp.to_i)
       when 4
         system('clear')
         exit
@@ -59,11 +57,12 @@ class TodoListTool
     edit_options(load_id)
   end
 
-  def delete_todo(delete_id)
+  def delete_todo_list(delete_id)
     disp_header
     current_todo = TodoList.find(delete_id)
     title = current_todo.title
-    print "Are you sure you want to delete #{title} (y/n)? > "
+    print "Are you sure you want to delete #{title} (y/n)?"
+    print "\n> "
     input = gets.chomp.downcase
 
     case input
@@ -77,7 +76,7 @@ class TodoListTool
     else
       puts "Invalid Selection"
       sleep(0.5)
-      delete_todo(delete_id)
+      delete_todo_list(delete_id)
     end
   end
 
@@ -98,7 +97,9 @@ class TodoListTool
     when 2
       mark_todo(current_todo)
     when 3
+      edit_todo(current_todo)
     when 4
+      delete_todo(current_todo)
     when 5
       startup!
     else
@@ -111,12 +112,19 @@ class TodoListTool
     disp_todo(current_todo.id)
     print "New Entry: "
     new_entry = gets.chomp
-    current_todo.joined_entries_w_boolean += new_entry + "||||F+a+L+s+E****"
+    if current_todo.joined_entries_w_boolean.nil?
+      current_todo.joined_entries_w_boolean = new_entry + "||||F+a+L+s+E****"
+    else
+      current_todo.joined_entries_w_boolean += new_entry + "||||F+a+L+s+E****"
+    end
     current_todo.save
     load_todo(current_todo.id)
   end
 
   def mark_todo(current_todo)
+    if current_todo.joined_entries_w_boolean.nil?
+
+    end
     entries = get_entries_hash(current_todo)
     disp_todo(current_todo.id)
     puts "Which Unfinished Todo Would you Like to Mark?"
@@ -134,12 +142,94 @@ class TodoListTool
     load_todo(current_todo.id)
   end
 
+  def edit_todo(current_todo)
+    entries = get_entries_hash(current_todo)
+    disp_todo(current_todo.id)
+    puts "Is the Todo You Want to Edit Finished (f) or Unfinished (u)?"
+    print "\n> "
+    input = gets.chomp
+
+    case input
+    when "f"
+      disp_todo(current_todo.id)
+      puts "Which Finished Todo Would you Like to Edit?"
+      print "\n> "
+      input = gets.chomp.to_i
+      disp_todo(current_todo.id)
+      print "New Entry: "
+      new_entry = gets.chomp
+      entries[:finished][input - 1] = new_entry
+    when "u"
+      disp_todo(current_todo.id)
+      puts "Which Unfinished Todo Would you Like to Edit?"
+      print "\n> "
+      input = gets.chomp.to_i
+      disp_todo(current_todo.id)
+      print "New Entry: "
+      new_entry = gets.chomp
+      entries[:unfinished][input - 1] = new_entry
+    else
+      puts "Invalid Selection"
+      sleep(0.5)
+      edit_todo(current_todo)
+    end
+
+    zipped_entries = zip_entries_hash(entries)
+
+    current_todo.joined_entries_w_boolean = zipped_entries
+    current_todo.save
+
+    load_todo(current_todo.id)
+  end
+
+  def delete_todo(current_todo)
+    entries = get_entries_hash(current_todo)
+    disp_todo(current_todo.id)
+    puts "Is the Todo You Want to Delete Finished (f) or Unfinished (u)?"
+    print "\n> "
+    input = gets.chomp
+
+    case input
+    when "f"
+      disp_todo(current_todo.id)
+      puts "Which Finished Todo Would you Like to Delete?"
+      print "\n> "
+      input = gets.chomp.to_i
+      disp_todo(current_todo.id)
+      entries[:finished][input - 1] = nil
+      entries[:finished].compact!
+    when "u"
+      disp_todo(current_todo.id)
+      puts "Which Unfinished Todo Would you Like to Delete?"
+      print "\n> "
+      input = gets.chomp.to_i
+      disp_todo(current_todo.id)
+      print "New Entry: "
+      new_entry = gets.chomp
+      entries[:unfinished][input - 1] = nil
+      entries[:unfinished].compact!
+    else
+      puts "Invalid Selection"
+      sleep(0.5)
+      delete_todo(current_todo)
+    end
+
+    zipped_entries = zip_entries_hash(entries)
+
+    current_todo.joined_entries_w_boolean = zipped_entries
+    current_todo.save
+
+    load_todo(current_todo.id)
+  end
+
   def disp_todo(todo_id)
     disp_header
     current_todo = TodoList.find(todo_id)
     title = current_todo.title
-    puts "\n" + center_msg(" #{title} ", "*", TERM_WIDTH)
-    puts center_msg(("¯" * title.size), " ", TERM_WIDTH)
+    puts "\n"
+    puts center_msg("", "*", `tput cols`.chomp.to_i)
+    puts center_msg(title, " ", `tput cols`.chomp.to_i)
+    puts center_msg(("¯" * title.size), " ", `tput cols`.chomp.to_i)
     print center_left_msg("Finished", " ")
     puts center_left_msg("Unfinished", " ")
     print center_left_msg("¯¯¯¯¯¯¯¯", " ")
@@ -147,7 +237,7 @@ class TodoListTool
 
     if current_todo.joined_entries_w_boolean.nil?
       puts " "
-      puts center_msg("", "*", TERM_WIDTH)
+      puts center_msg("", "*", `tput cols`.chomp.to_i)
       puts " "
       return
     end
@@ -169,15 +259,15 @@ class TodoListTool
       elsif !(finished_list[ind].nil?) && unfinished_list[ind].nil?
         line = "#{ind + 1}) " + finished_list[ind]
       elsif finished_list[ind].nil? && !(unfinished_list[ind].nil?)
-        line =  " " * (TERM_WIDTH / 2) + "#{ind + 1}) " + unfinished_list[ind]
+        line =  " " * (`tput cols`.chomp.to_i / 2) + "#{ind + 1}) " + unfinished_list[ind]
       else
-        line = "#{ind + 1}) " + finished_list[ind] + " " * ((TERM_WIDTH / 2) - pad - finished_list[ind].size) + "#{ind + 1}) " + unfinished_list[ind]
+        line = "#{ind + 1}) " + finished_list[ind] + " " * ((`tput cols`.chomp.to_i / 2) - pad - finished_list[ind].size) + "#{ind + 1}) " + unfinished_list[ind]
       end
     end
 
     entry_disp.each { |line| puts line }
     puts " "
-    puts center_msg("", "*", TERM_WIDTH)
+    puts center_msg("", "*", `tput cols`.chomp.to_i)
     puts " "
   end
 
@@ -221,7 +311,8 @@ class TodoListTool
     "╚══════════════════════════════════════════════════════════════════╝"
     ]
     system('clear')
-    title.each { |line| puts center_msg(line, ' ', TERM_WIDTH) }
+    title.each { |line| puts center_msg(line, ' ', `tput cols`.chomp.to_i) }
+    puts " "
   end
 
   def center_msg(string, pad_char, width)
@@ -234,7 +325,7 @@ class TodoListTool
   end
 
   def center_left_msg(string, pad_char)
-    width = TERM_WIDTH / 2
+    width = `tput cols`.chomp.to_i / 2
     center_msg(string, pad_char, width)
   end
 
