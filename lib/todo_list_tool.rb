@@ -288,8 +288,14 @@ class TodoListTool
 
   def disp_existing_todos
     TodoList.all.each do |todolist|
+      list = todolist.id.to_s + ") #{todolist.title}"
+      # pad = " " * (`tput cols`.chomp.to_i - list.size)
       puts todolist.id.to_s + ") #{todolist.title}"
+      puts "  · created on:         " + todolist.created_at.to_s
+      puts "  · last updated on on: " + todolist.updated_at.to_s
+      puts center_msg("", "¯", `tput cols`.chomp.to_i)
     end
+    puts " "
   end
 
   def get_entries_hash(current_todo)
