@@ -1,5 +1,9 @@
 #Todo List Tool
 ###Description
+- Create, store, and update multiple todo lists in a local database
+- Start by 
+- awefawef
+- awefawef
 ###Setup
 ###Topics
 ###Takeaway

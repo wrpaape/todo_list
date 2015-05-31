@@ -20,6 +20,11 @@ class TodoListTool
         print "\n> "
         new_todo(gets.chomp)
       when 2
+        if TodoList.all.size == 0
+          puts "No Todo Lists to Load"
+          sleep(0.5)
+          startup!
+        end
         loop do
           disp_header
           disp_existing_todos
@@ -32,6 +37,11 @@ class TodoListTool
         end
         load_todo(input)
       when 3
+        if TodoList.all.size == 0
+          puts "No Todo Lists to Delete"
+          sleep(0.5)
+          startup!
+        end
         loop do
           disp_header
           disp_existing_todos
