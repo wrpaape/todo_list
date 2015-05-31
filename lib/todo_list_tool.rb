@@ -123,8 +123,11 @@ class TodoListTool
 
   def mark_todo(current_todo)
     if current_todo.joined_entries_w_boolean.nil?
-
+      puts "No Todos to Mark"
+      sleep (0.5)
+      load_todo(current_todo.id)
     end
+
     entries = get_entries_hash(current_todo)
     disp_todo(current_todo.id)
     puts "Which Unfinished Todo Would you Like to Mark?"
@@ -143,6 +146,12 @@ class TodoListTool
   end
 
   def edit_todo(current_todo)
+    if current_todo.joined_entries_w_boolean.nil?
+      puts "No Todos to Edit"
+      sleep (0.5)
+      load_todo(current_todo.id)
+    end
+
     entries = get_entries_hash(current_todo)
     disp_todo(current_todo.id)
     puts "Is the Todo You Want to Edit Finished (f) or Unfinished (u)?"
@@ -183,6 +192,12 @@ class TodoListTool
   end
 
   def delete_todo(current_todo)
+    if current_todo.joined_entries_w_boolean.nil?
+      puts "No Todos to Delete"
+      sleep (0.5)
+      load_todo(current_todo.id)
+    end
+
     entries = get_entries_hash(current_todo)
     disp_todo(current_todo.id)
     puts "Is the Todo You Want to Delete Finished (f) or Unfinished (u)?"
@@ -328,13 +343,6 @@ class TodoListTool
     width = `tput cols`.chomp.to_i / 2
     center_msg(string, pad_char, width)
   end
-
-  def right_msg(string, pad_char)
-    width = `tput cols`.chomp.to_i
-    padding = width - string.length
-    pad_char * padding + string
-  end
-
 end
 
 TodoListTool.new.startup!
