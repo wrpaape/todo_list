@@ -96,7 +96,7 @@ class TodoListTool
     when 1
       add_todo(current_todo)
     when 2
-
+      mark_todo(current_todo)
     when 3
     when 4
     when 5
@@ -108,12 +108,29 @@ class TodoListTool
   end
 
   def add_todo(current_todo)
-    disp_header
     disp_todo(current_todo.id)
     print "New Entry: "
     new_entry = gets.chomp
     current_todo.joined_entries_w_boolean += new_entry + "||||F+a+L+s+E****"
     current_todo.save
+    load_todo(current_todo.id)
+  end
+
+  def mark_todo(current_todo)
+    entries = get_entries_hash(current_todo)
+    disp_todo(current_todo.id)
+    puts "Which Unfinished Todo Would you Like to Mark?"
+    print "\n> "
+    input = gets.chomp.to_i
+    marked_entry = entries[:unfinished][input - 1]
+    entries[:unfinished][input - 1] = nil
+    entries[:unfinished].compact!
+    entries[:finished] << marked_entry
+    zipped_entries = zip_entries_hash(entries)
+
+    current_todo.joined_entries_w_boolean = zipped_entries
+    current_todo.save
+
     load_todo(current_todo.id)
   end
 
@@ -182,6 +199,14 @@ class TodoListTool
       end
     end
     entries
+  end
+
+  def zip_entries_hash(entries)
+    zipped_entries = ""
+    puts entries.inspect
+    entries[:finished].map! { |entry| zipped_entries += entry + '||||T+r+U+e****' }
+    entries[:unfinished].map! { |entry| zipped_entries += entry + '||||F+a+L+s+E****' }
+    zipped_entries
   end
 
   def disp_header
