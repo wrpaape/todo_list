@@ -20,17 +20,29 @@ class TodoListTool
         print "\n> "
         new_todo(gets.chomp)
       when 2
-        disp_header
-        disp_existing_todos
-        puts "Which Todo Would you Like to Load?"
-        print "\n> "
-        load_todo(gets.chomp.to_i)
+        loop do
+          disp_header
+          disp_existing_todos
+          puts "Which Todo List Would you Like to Load?"
+          print "\n> "
+          input = gets.chomp.to_i
+          break if TodoList.find_by(id: input)
+          puts "Invalid Selection"
+          sleep(0.5)
+        end
+        load_todo(input)
       when 3
-        disp_header
-        disp_existing_todos
-        puts "Which Todo Would you Like to Delete?"
-        print "\n> "
-        delete_todo_list(gets.chomp.to_i)
+        loop do
+          disp_header
+          disp_existing_todos
+          puts "Which Todo List Would you Like to Delete?"
+          print "\n> "
+          input = gets.chomp.to_i
+          break if TodoList.find_by(id: input)
+          puts "Invalid Selection"
+          sleep(0.5)
+        end
+        delete_todo_list(input)
       when 4
         system('clear')
         exit
@@ -104,7 +116,7 @@ class TodoListTool
       startup!
     else
       puts "Invalid Selection"
-      edit_options(todo_id)
+      load_todo(todo_id)
     end
   end
 
@@ -219,8 +231,6 @@ class TodoListTool
       print "\n> "
       input = gets.chomp.to_i
       disp_todo(current_todo.id)
-      print "New Entry: "
-      new_entry = gets.chomp
       entries[:unfinished][input - 1] = nil
       entries[:unfinished].compact!
     else
@@ -288,12 +298,11 @@ class TodoListTool
 
   def disp_existing_todos
     TodoList.all.each do |todolist|
-      list = todolist.id.to_s + ") #{todolist.title}"
-      # pad = " " * (`tput cols`.chomp.to_i - list.size)
       puts todolist.id.to_s + ") #{todolist.title}"
-      puts "  · created on:         " + todolist.created_at.to_s
-      puts "  · last updated on on: " + todolist.updated_at.to_s
-      puts center_msg("", "¯", `tput cols`.chomp.to_i)
+      puts "   · created on:         " + todolist.created_at.to_s
+      puts "   · last updated on on: " + todolist.updated_at.to_s
+      puts " "
+      puts center_msg("", "¯", ("   · last updated on on: " + todolist.updated_at.to_s).size)
     end
     puts " "
   end
