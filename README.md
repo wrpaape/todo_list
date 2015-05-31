@@ -20,8 +20,8 @@ $ rake db:migrate
 $ ruby console.rb
 ```
 - You should then be prompted with the start up options
-- make sure your terminal window is open wide and/or your terminal font size is small to avoid text wrapping and crashing for larger entries
-- quit the program at any time by entering `ctr + c` selecting `exit` under the start up options
+- Make sure your terminal window is open wide and/or your terminal font size is small to avoid text wrapping and crashing for larger entries
+- Quit the program at any time by entering `ctr + c` selecting `exit` under the start up options
 
 ###Topics
 - Become familiar with sqlite and Active Record
