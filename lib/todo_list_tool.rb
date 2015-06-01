@@ -16,9 +16,14 @@ class TodoListTool
       case input
       when 1
         disp_header
-        puts "Enter New Todo List Title"
+
+        puts "Enter New Todo List Title ('CTR + C' to cancel)"
         print "\n> "
-        new_todo(gets.chomp)
+        begin
+          new_todo(gets.chomp)
+          rescue Interrupt
+            startup!
+        end
       when 2
         if TodoList.all.size == 0
           puts "No Todo Lists to Load"
