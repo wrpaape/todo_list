@@ -342,7 +342,6 @@ class TodoListTool
 
   def zip_entries_hash(entries)
     zipped_entries = ""
-    puts entries.inspect
     entries[:finished].map! { |entry| zipped_entries += entry + '||||T+r+U+e****' }
     entries[:unfinished].map! { |entry| zipped_entries += entry + '||||F+a+L+s+E****' }
     zipped_entries
@@ -381,7 +380,6 @@ class TodoListTool
   def disp_pig
     pad_front = "M" * (`tput cols`.chomp.to_i - "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMmdhhhmMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM".size)
     pad_back = "M" * 0
-    puts pad_back.inspect
     while pad_front.size > 0
       pig =
 """
