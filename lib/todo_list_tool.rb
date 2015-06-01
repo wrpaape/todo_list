@@ -31,6 +31,7 @@ class TodoListTool
           puts "Which Todo List Would you Like to Load?"
           print "\n> "
           input = gets.chomp.to_i
+          startup! if input == 0
           break if TodoList.find_by(id: input)
           puts "Invalid Selection"
           sleep(0.5)
@@ -48,6 +49,7 @@ class TodoListTool
           puts "Which Todo List Would you Like to Delete?"
           print "\n> "
           input = gets.chomp.to_i
+          startup! if input == 0
           break if TodoList.find_by(id: input)
           puts "Invalid Selection"
           sleep(0.5)
@@ -309,14 +311,19 @@ class TodoListTool
   end
 
   def disp_existing_todos
+    line_size = 0
     TodoList.all.each do |todolist|
+      line_size = ("   · last updated on: " + todolist.updated_at.to_s).size + 1
+      puts center_msg("", "¯", line_size)
       puts todolist.id.to_s + ") #{todolist.title}"
       puts "   · created on:      " + todolist.created_at.to_s
       puts "   · last updated on: " + todolist.updated_at.to_s
       puts " "
-      puts center_msg("", "¯", ("   · last updated on: " + todolist.updated_at.to_s).size + 1)
     end
+    puts center_msg("", "¯", line_size)
+    puts "0) Return to Start Up Options"
     puts " "
+    puts center_msg("", "¯", line_size)
   end
 
   def get_entries_hash(current_todo)
@@ -372,7 +379,7 @@ class TodoListTool
   end
 
   def disp_pig
-    pad_front = "M" * (`tput cols`.chomp.to_i - "#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMmdhhhmMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM".size)
+    pad_front = "M" * (`tput cols`.chomp.to_i - "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMmdhhhmMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM".size)
     pad_back = "M" * 0
     puts pad_back.inspect
     while pad_front.size > 0
