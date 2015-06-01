@@ -55,6 +55,7 @@ class TodoListTool
         delete_todo_list(input)
       when 4
         system('clear')
+        disp_pig
         exit
       else
         puts "Invalid Selection"
@@ -63,6 +64,7 @@ class TodoListTool
       end
       rescue Interrupt
         system('clear')
+        disp_pig
         exit
     end
   end
@@ -367,6 +369,51 @@ class TodoListTool
   def center_left_msg(string, pad_char)
     width = `tput cols`.chomp.to_i / 2
     center_msg(string, pad_char, width)
+  end
+
+  def disp_pig
+    pad_front = "M" * (`tput cols`.chomp.to_i - "#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMmdhhhmMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM".size)
+    pad_back = "M" * 0
+    puts pad_back.inspect
+    while pad_front.size > 0
+      pig =
+"""
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMmdhhhmMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMmhyo/:---/yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMMMMMNhs/:--------/osMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMMMdo:------------:yNMMMMMMNmdhyysyhNMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMd+:------------:/ohNNdhso/:::-:+oymMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMh/:----------:oyhhys+:::--:+syhhhyyyhMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMy:---------/sdhs+::----:+yddys/::/oydNMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMM/--------+hds/:----:+shhy+::--oyhhhmMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMs------/dd+:-----/sdyo/:------:/+shNMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMNo:---+Ny:-----:ydo:--------ohdmNMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMmhyyNh:------ys:----------//+sNMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMNmhsMs-------:---------osyyyhddmMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMhdNMmdhys+/:--dy-----------------+yNh::-::+ymMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMhNMMm//dm/--------:/-------------+ossyhh+-------:smMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMmdy+mh-:hs--------------------::/ohMy/:-----------/hMMMMMNNMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMm:--/+--::--------------------/oosss+--------------:hMMMMNMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMm+---------------------------------------------------:NMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMNy/:h+--------------------------------------------------dMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMNds/--:+:-----------------------------------------------:y+mMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}Mdymh:-------o+:---------------------------------------------/ymNMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}Mmh/h:---::/+dNh:----------------------------------------------:+shmNNMMMMMMMMMM#{pad_back}
+#{pad_front}MMNhhhyhhhhys+/+:::::::--------------------------:o::--------------://smMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMdhhyyyhhhdhhhhhys/:/s+-------:+----------:oddhysoo+++///::::::-:yNMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMNNho/:::/sddo:----::sms------::/+shmMMMMMMMMMMMMMNNmddhyoomMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMmyo+/sdmdhyo:----:/ohNh+:::/+sydmMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMh+--::ohds/-::::+shmMMMMNNNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMM++shmMh/-:oydmNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMhohNMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+#{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
+"""
+      puts pig
+      pad_front.chop!.chop!.chop!
+      pad_back += "MMM"
+      sleep(0.02)
+      system('clear')
+    end
   end
 end
 
