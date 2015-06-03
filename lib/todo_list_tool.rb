@@ -1,66 +1,35 @@
+require 'net/http'
+require 'json'
 require_relative "../db/setup"
 require_relative "todo_list"
 
 
 class TodoListTool
+  TITLE = "Rails Server Todo List"
   def startup!
     begin
       disp_header
-      puts "1) Make a New Todo List"
-      puts "2) Load an Existing Todo List"
-      puts "3) Delete an Existing Todo List"
-      puts "4) Exit"
+      puts "1) Load Your Rails Server Todo List"
+      puts "2) Exit"
       print "\n> "
       input = gets.chomp.to_i
-
       case input
       when 1
         disp_header
-
-        puts "Enter New Todo List Title ('CTR + C' to cancel)"
-        print "\n> "
-        begin
-          new_todo(gets.chomp)
-          rescue Interrupt
-            startup!
+        disp_list_summary
+        loop do
+          disp_header
+          disp_list_summary
+          puts "Load This Todo List (y/n)?"
+          print "\n> "
+          input = gets.chomp.downcase
+          startup! if input == "n"
+          break if input == "y"
+          puts "Invalid Selection"
+          sleep(0.5)
         end
+        load_todo_list
       when 2
-        if TodoList.all.size == 0
-          puts "No Todo Lists to Load"
-          sleep(0.5)
-          startup!
-        end
-        loop do
-          disp_header
-          disp_existing_todos
-          puts "Which Todo List Would you Like to Load?"
-          print "\n> "
-          input = gets.chomp.to_i
-          startup! if input == 0
-          break if TodoList.find_by(id: input)
-          puts "Invalid Selection"
-          sleep(0.5)
-        end
-        load_todo(input)
-      when 3
-        if TodoList.all.size == 0
-          puts "No Todo Lists to Delete"
-          sleep(0.5)
-          startup!
-        end
-        loop do
-          disp_header
-          disp_existing_todos
-          puts "Which Todo List Would you Like to Delete?"
-          print "\n> "
-          input = gets.chomp.to_i
-          startup! if input == 0
-          break if TodoList.find_by(id: input)
-          puts "Invalid Selection"
-          sleep(0.5)
-        end
-        delete_todo_list(input)
-      when 4
         system('clear')
         disp_pig
         exit
@@ -76,44 +45,12 @@ class TodoListTool
     end
   end
 
-  def new_todo(title)
-    current_todo = TodoList.create(title: title)
-    todo_id = current_todo.id
-    disp_todo(todo_id)
-    edit_options(todo_id)
+  def load_todo_list
+    disp_todo_list
+    disp_edit_options
   end
 
-  def load_todo(load_id)
-    disp_todo(load_id)
-    edit_options(load_id)
-  end
-
-  def delete_todo_list(delete_id)
-    disp_header
-    current_todo = TodoList.find(delete_id)
-    title = current_todo.title
-    print "Are you sure you want to delete #{title} (y/n)?"
-    print "\n> "
-    input = gets.chomp.downcase
-
-    case input
-    when "y"
-      TodoList.destroy(delete_id)
-      puts "RIP #{title}"
-      sleep(0.5)
-      startup!
-    when "n"
-      startup!
-    else
-      puts "Invalid Selection"
-      sleep(0.5)
-      delete_todo_list(delete_id)
-    end
-  end
-
-
-  def edit_options(todo_id)
-    current_todo = TodoList.find(todo_id)
+  def disp_edit_options
     puts "1) Add a Todo"
     puts "2) Mark an Unfinished Todo as Done"
     puts "3) Edit an Existing Todo"
@@ -124,66 +61,64 @@ class TodoListTool
 
     case input
     when 1
-      add_todo(current_todo)
+      add_todo
     when 2
-      mark_todo(current_todo)
+      mark_todo
     when 3
-      edit_todo(current_todo)
+      edit_todo
     when 4
-      delete_todo(current_todo)
+      delete_todo
     when 5
       startup!
     else
       puts "Invalid Selection"
-      load_todo(todo_id)
+      load_todo_list
     end
   end
 
-  def add_todo(current_todo)
-    disp_todo(current_todo.id)
+  def add_todo
+    disp_todo_list
+    uri = URI('http://localhost:3000/todos')
+    todos_json = Net::HTTP.get(uri)
+    todo_list = JSON.parse(todos_json)
     print "New Entry: "
     new_entry = gets.chomp
-    if current_todo.joined_entries_w_boolean.nil?
-      current_todo.joined_entries_w_boolean = new_entry + "||||F+a+L+s+E****"
-    else
-      current_todo.joined_entries_w_boolean += new_entry + "||||F+a+L+s+E****"
-    end
-    current_todo.save
-    load_todo(current_todo.id)
+
+    Net::HTTP.post_form(uri, 'q' => 'ruby', 'body' => new_entry)
+
+    load_todo_list
   end
 
-  def mark_todo(current_todo)
-    if current_todo.joined_entries_w_boolean.nil?
+  def mark_todo
+    disp_todo_list
+    uri = URI('http://localhost:3000/todos')
+    todos_json = Net::HTTP.get(uri)
+    todo_list = JSON.parse(todos_json)
+
+    if todo_list.size == 0
       puts "No Todos to Mark"
       sleep (0.5)
-      load_todo(current_todo.id)
+      load_todo_list
     end
 
-    entries = get_entries_hash(current_todo)
-    disp_todo(current_todo.id)
     puts "Which Unfinished Todo Would you Like to Mark?"
     print "\n> "
     input = gets.chomp.to_i
-    marked_entry = entries[:unfinished][input - 1]
-    entries[:unfinished][input - 1] = nil
-    entries[:unfinished].compact!
-    entries[:finished] << marked_entry
-    zipped_entries = zip_entries_hash(entries)
+    marked_body = @incompleted_bodies[input - 1]
 
-    current_todo.joined_entries_w_boolean = zipped_entries
-    current_todo.save
 
-    load_todo(current_todo.id)
+
+    load_todo_list
   end
 
-  def edit_todo(current_todo)
+  def edit_todo
     if current_todo.joined_entries_w_boolean.nil?
       puts "No Todos to Edit"
       sleep (0.5)
-      load_todo(current_todo.id)
+      load_todo_list(current_todo.id)
     end
 
-    entries = get_entries_hash(current_todo)
+    entries = get_entries_hash
     disp_todo(current_todo.id)
     puts "Is the Todo You Want to Edit Finished (f) or Unfinished (u)?"
     print "\n> "
@@ -211,7 +146,7 @@ class TodoListTool
     else
       puts "Invalid Selection"
       sleep(0.5)
-      edit_todo(current_todo)
+      edit_todo
     end
 
     zipped_entries = zip_entries_hash(entries)
@@ -219,17 +154,17 @@ class TodoListTool
     current_todo.joined_entries_w_boolean = zipped_entries
     current_todo.save
 
-    load_todo(current_todo.id)
+    load_todo_list(current_todo.id)
   end
 
-  def delete_todo(current_todo)
+  def delete_todo
     if current_todo.joined_entries_w_boolean.nil?
       puts "No Todos to Delete"
       sleep (0.5)
-      load_todo(current_todo.id)
+      load_todo_list(current_todo.id)
     end
 
-    entries = get_entries_hash(current_todo)
+    entries = get_entries_hash
     disp_todo(current_todo.id)
     puts "Is the Todo You Want to Delete Finished (f) or Unfinished (u)?"
     print "\n> "
@@ -255,7 +190,7 @@ class TodoListTool
     else
       puts "Invalid Selection"
       sleep(0.5)
-      delete_todo(current_todo)
+      delete_todo
     end
 
     zipped_entries = zip_entries_hash(entries)
@@ -263,93 +198,72 @@ class TodoListTool
     current_todo.joined_entries_w_boolean = zipped_entries
     current_todo.save
 
-    load_todo(current_todo.id)
+    load_todo_list(current_todo.id)
   end
 
-  def disp_todo(todo_id)
+  def disp_todo_list
     disp_header
-    current_todo = TodoList.find(todo_id)
-    title = current_todo.title
-    puts "\n"
-    puts center_msg("", "*", `tput cols`.chomp.to_i)
-    puts center_msg(title, " ", `tput cols`.chomp.to_i)
-    puts center_msg(("¯" * title.size), " ", `tput cols`.chomp.to_i)
-    print center_left_msg("Finished", " ")
-    puts center_left_msg("Unfinished", " ")
-    print center_left_msg("¯¯¯¯¯¯¯¯", " ")
-    puts center_left_msg("¯¯¯¯¯¯¯¯¯¯", " ")
-
-    if current_todo.joined_entries_w_boolean.nil?
-      puts " "
-      puts center_msg("", "*", `tput cols`.chomp.to_i)
-      puts " "
-      return
+    uri = URI('http://localhost:3000/todos')
+    todos_json = Net::HTTP.get(uri)
+    todo_list = JSON.parse(todos_json)
+    @completed_bodies = []
+    @incompleted_bodies = []
+    todo_list.each do |todo|
+      todo["completed"] ? @completed_bodies << todo["body"].to_s : @incompleted_bodies << todo["body"].to_s
     end
 
-    entries = get_entries_hash(current_todo)
-    finished_list = entries[:finished]
-    unfinished_list = entries[:unfinished]
-    if finished_list.size >= unfinished_list.size
-      max_lines = finished_list.size
+    if @completed_bodies.size >= @incompleted_bodies.size
+      max_lines = @completed_bodies.size
     else
-      max_lines = unfinished_list.size
+      max_lines = @incompleted_bodies.size
     end
 
     entry_disp = Array.new(max_lines)
     entry_disp.map!.with_index do |line, ind|
       pad = ((ind + 1).to_s.size + 2)
-      if finished_list[ind].nil? && unfinished_list[ind].nil?
-        break
-      elsif !(finished_list[ind].nil?) && unfinished_list[ind].nil?
-        line = "#{ind + 1}) " + finished_list[ind]
-      elsif finished_list[ind].nil? && !(unfinished_list[ind].nil?)
-        line =  " " * (`tput cols`.chomp.to_i / 2) + "#{ind + 1}) " + unfinished_list[ind]
+      if (ind + 1) > @incompleted_bodies.size
+        line = "#{ind + 1}) " + @completed_bodies[ind]
+      elsif (ind + 1) > @completed_bodies.size
+        line = " " * (`tput cols`.chomp.to_i / 2) + "#{ind + 1}) " + @incompleted_bodies[ind]
       else
-        line = "#{ind + 1}) " + finished_list[ind] + " " * ((`tput cols`.chomp.to_i / 2) - pad - finished_list[ind].size) + "#{ind + 1}) " + unfinished_list[ind]
+        line = "#{ind + 1}) " + @completed_bodies[ind] + " " * ((`tput cols`.chomp.to_i / 2) - pad - @completed_bodies[ind].size) + "#{ind + 1}) " + @incompleted_bodies[ind]
       end
     end
 
+    puts "\n"
+    puts center_msg("", "*", `tput cols`.chomp.to_i)
+    puts center_msg(TITLE, " ", `tput cols`.chomp.to_i)
+    puts center_msg(("¯" * TITLE.size), " ", `tput cols`.chomp.to_i)
+    print center_left_msg("Finished", " ")
+    puts center_left_msg("Unfinished", " ")
+    print center_left_msg("¯¯¯¯¯¯¯¯", " ")
+    puts center_left_msg("¯¯¯¯¯¯¯¯¯¯", " ")
     entry_disp.each { |line| puts line }
     puts " "
     puts center_msg("", "*", `tput cols`.chomp.to_i)
     puts " "
   end
 
-  def disp_existing_todos
-    line_size = 0
-    TodoList.all.each do |todolist|
-      line_size = ("   · last updated on: " + todolist.updated_at.to_s).size + 1
-      puts center_msg("", "¯", line_size)
-      puts todolist.id.to_s + ") #{todolist.title}"
-      puts "   · created on:      " + todolist.created_at.to_s
-      puts "   · last updated on: " + todolist.updated_at.to_s
-      puts " "
+  def disp_list_summary
+    uri = URI('http://localhost:3000/todos')
+    todos_json = Net::HTTP.get(uri)
+    todos_ruby = JSON.parse(todos_json)
+    create_array = []
+    update_array = []
+    todos_ruby.each do |todo|
+      create_array << DateTime.iso8601(todo["created_at"])
+      update_array << DateTime.iso8601(todo["updated_at"])
     end
+    first_created = create_array.min.strftime("%m/%d/%Y at %I:%M%p")
+    last_updated = update_array.max.strftime("%m/%d/%Y at %I:%M%p")
+
+    line_size = ("  · last updated on: " + last_updated).size + 1
     puts center_msg("", "¯", line_size)
-    puts "0) Return to Start Up Options"
+    puts TITLE
+    puts "  · created on:      " + first_created
+    puts "  · last updated on: " + last_updated
     puts " "
     puts center_msg("", "¯", line_size)
-  end
-
-  def get_entries_hash(current_todo)
-    split1 = current_todo.joined_entries_w_boolean.split('****')
-    entries = { finished: [], unfinished: [] }
-    split1.each do |string|
-      split2 = string.split('||||')
-      if split2[1] == "T+r+U+e"
-        entries[:finished] << split2[0]
-      else
-        entries[:unfinished] << split2[0]
-      end
-    end
-    entries
-  end
-
-  def zip_entries_hash(entries)
-    zipped_entries = ""
-    entries[:finished].map! { |entry| zipped_entries += entry + '||||T+r+U+e****' }
-    entries[:unfinished].map! { |entry| zipped_entries += entry + '||||F+a+L+s+E****' }
-    zipped_entries
   end
 
   def disp_header
@@ -419,9 +333,9 @@ class TodoListTool
 #{pad_front}MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM#{pad_back}
 """
       puts pig
-      pad_front.chop!.chop!.chop!
-      pad_back += "MMM"
-      sleep(0.02)
+      pad_front.chop!
+      pad_back += "M"
+      sleep(0.005)
       system('clear')
     end
   end
