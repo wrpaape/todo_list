@@ -1,5 +1,6 @@
 require 'net/http'
 require 'json'
+require 'uri'
 require_relative "../db/setup"
 require_relative "todo_list"
 
@@ -72,6 +73,7 @@ class TodoListTool
       startup!
     else
       puts "Invalid Selection"
+      sleep(0.5)
       load_todo_list
     end
   end
@@ -90,115 +92,143 @@ class TodoListTool
   end
 
   def mark_todo
-    disp_todo_list
     uri = URI('http://localhost:3000/todos')
     todos_json = Net::HTTP.get(uri)
     todo_list = JSON.parse(todos_json)
-
     if todo_list.size == 0
       puts "No Todos to Mark"
       sleep (0.5)
       load_todo_list
     end
 
+    disp_todo_list
     puts "Which Unfinished Todo Would you Like to Mark?"
     print "\n> "
     input = gets.chomp.to_i
     marked_body = @incompleted_bodies[input - 1]
+    uri = URI("http://localhost:3000/todos?completed=false&body=#{marked_body}")
+    todo_json = Net::HTTP.get(uri)
+    marked_todo = JSON.parse(todo_json)
+    puts marked_todo.inspect
+    marked_todo_id = marked_todo["id"].to_s
 
+    url = "http://localhost:3000/"
+    uri = URI.parse(url)
+    params = {completed: "true"}
 
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Put.new("/todos/#{marked_todo_id}")
+    request.set_form_data(params)
+    http.request(request)
 
     load_todo_list
   end
 
   def edit_todo
-    if current_todo.joined_entries_w_boolean.nil?
+    uri = URI('http://localhost:3000/todos')
+    todos_json = Net::HTTP.get(uri)
+    todo_list = JSON.parse(todos_json)
+    if todo_list.size == 0
       puts "No Todos to Edit"
       sleep (0.5)
-      load_todo_list(current_todo.id)
+      load_todo_list
     end
 
-    entries = get_entries_hash
-    disp_todo(current_todo.id)
-    puts "Is the Todo You Want to Edit Finished (f) or Unfinished (u)?"
+    disp_todo_list
+    puts "Is the Todo you Want to Edit Finished (f) or Unfinished (u) ?"
     print "\n> "
-    input = gets.chomp
+    input = gets.chomp.downcase
 
     case input
     when "f"
-      disp_todo(current_todo.id)
       puts "Which Finished Todo Would you Like to Edit?"
       print "\n> "
       input = gets.chomp.to_i
-      disp_todo(current_todo.id)
-      print "New Entry: "
-      new_entry = gets.chomp
-      entries[:finished][input - 1] = new_entry
+
+      marked_body = @completed_bodies[input - 1]
+      uri = URI("http://localhost:3000/todos?completed=true&body=#{marked_body}")
+      todo_json = Net::HTTP.get(uri)
+      marked_todo = JSON.parse(todo_json)
+      marked_todo_id = marked_todo["id"].to_s
     when "u"
-      disp_todo(current_todo.id)
       puts "Which Unfinished Todo Would you Like to Edit?"
       print "\n> "
       input = gets.chomp.to_i
-      disp_todo(current_todo.id)
-      print "New Entry: "
-      new_entry = gets.chomp
-      entries[:unfinished][input - 1] = new_entry
+
+      marked_body = @incompleted_bodies[input - 1]
+      uri = URI("http://localhost:3000/todos?completed=false&body=#{marked_body}")
+      todo_json = Net::HTTP.get(uri)
+      marked_todo = JSON.parse(todo_json)
+      marked_todo_id = marked_todo["id"].to_s
     else
       puts "Invalid Selection"
       sleep(0.5)
-      edit_todo
+      load_todo_list
     end
 
-    zipped_entries = zip_entries_hash(entries)
+    print "New Entry: "
+    new_entry = gets.chomp
 
-    current_todo.joined_entries_w_boolean = zipped_entries
-    current_todo.save
+    url = "http://localhost:3000/"
+    uri = URI.parse(url)
+    params = {body: new_entry}
 
-    load_todo_list(current_todo.id)
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Put.new("/todos/#{marked_todo_id}")
+    request.set_form_data(params)
+    http.request(request)
+
+    load_todo_list
   end
 
   def delete_todo
-    if current_todo.joined_entries_w_boolean.nil?
+    uri = URI('http://localhost:3000/todos')
+    todos_json = Net::HTTP.get(uri)
+    todo_list = JSON.parse(todos_json)
+    if todo_list.size == 0
       puts "No Todos to Delete"
       sleep (0.5)
-      load_todo_list(current_todo.id)
+      load_todo_list
     end
 
-    entries = get_entries_hash
-    disp_todo(current_todo.id)
-    puts "Is the Todo You Want to Delete Finished (f) or Unfinished (u)?"
+    disp_todo_list
+    puts "Is the Todo you Want to Delete Finished (f) or Unfinished (u) ?"
     print "\n> "
-    input = gets.chomp
+    input = gets.chomp.downcase
 
     case input
     when "f"
-      disp_todo(current_todo.id)
       puts "Which Finished Todo Would you Like to Delete?"
       print "\n> "
       input = gets.chomp.to_i
-      disp_todo(current_todo.id)
-      entries[:finished][input - 1] = nil
-      entries[:finished].compact!
+
+      deleted_body = @completed_bodies[input - 1]
+      uri = URI("http://localhost:3000/todos?completed=true&body=#{deleted_body}")
+      todo_json = Net::HTTP.get(uri)
+      deleted_todo = JSON.parse(todo_json)
+      deleted_todo_id = deleted_todo["id"].to_s
     when "u"
-      disp_todo(current_todo.id)
       puts "Which Unfinished Todo Would you Like to Delete?"
       print "\n> "
       input = gets.chomp.to_i
-      disp_todo(current_todo.id)
-      entries[:unfinished][input - 1] = nil
-      entries[:unfinished].compact!
+
+      deleted_body = @incompleted_bodies[input - 1]
+      uri = URI("http://localhost:3000/todos?completed=false&body=#{deleted_body}")
+      todo_json = Net::HTTP.get(uri)
+      deleted_todo = JSON.parse(todo_json)
+      deleted_todo_id = deleted_todo["id"].to_s
     else
       puts "Invalid Selection"
       sleep(0.5)
-      delete_todo
+      load_todo_list
     end
 
-    zipped_entries = zip_entries_hash(entries)
+    uri = URI("http://localhost:3000/todos/#{deleted_todo_id}")
+    http = Net::HTTP.new(uri.host, uri.port)
+    req = Net::HTTP::Delete.new(uri.path)
+    res = http.request(req)
 
-    current_todo.joined_entries_w_boolean = zipped_entries
-    current_todo.save
-
-    load_todo_list(current_todo.id)
+    load_todo_list
   end
 
   def disp_todo_list
@@ -209,6 +239,7 @@ class TodoListTool
     @completed_bodies = []
     @incompleted_bodies = []
     todo_list.each do |todo|
+      puts todo["body"].inspect
       todo["completed"] ? @completed_bodies << todo["body"].to_s : @incompleted_bodies << todo["body"].to_s
     end
 
