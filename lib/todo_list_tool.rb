@@ -106,11 +106,19 @@ class TodoListTool
     print "\n> "
     input = gets.chomp.to_i
     marked_body = @incompleted_bodies[input - 1]
-    uri = URI("http://localhost:3000/todos?completed=false&body=#{marked_body}")
-    todo_json = Net::HTTP.get(uri)
-    marked_todo = JSON.parse(todo_json)
-    puts marked_todo.inspect
-    marked_todo_id = marked_todo["id"].to_s
+    marked_todo_id = ""
+    if marked_body == ""
+      @null_body_todos.each do |null_body_todo|
+        marked_todo_id = null_body_todo["id"].to_s if null_body_todo["completed"] == false
+      end
+    else
+      uri = URI("http://localhost:3000/todos?completed=false&body=#{marked_body}")
+      todo_json = Net::HTTP.get(uri)
+      marked_todo = JSON.parse(todo_json)
+      marked_todo_id = marked_todo["id"].to_s
+   end
+
+    puts "/todos/#{marked_todo_id}"
 
     url = "http://localhost:3000/"
     uri = URI.parse(url)
@@ -145,21 +153,35 @@ class TodoListTool
       print "\n> "
       input = gets.chomp.to_i
 
-      marked_body = @completed_bodies[input - 1]
-      uri = URI("http://localhost:3000/todos?completed=true&body=#{marked_body}")
-      todo_json = Net::HTTP.get(uri)
-      marked_todo = JSON.parse(todo_json)
-      marked_todo_id = marked_todo["id"].to_s
+      edited_body = @completed_bodies[input - 1]
+      edited_todo_id = ""
+      if edited_body == ""
+        @null_body_todos.each do |null_body_todo|
+          edited_todo_id = null_body_todo["id"].to_s if null_body_todo["completed"] == true
+        end
+      else
+        uri = URI("http://localhost:3000/todos?completed=true&body=#{edited_body}")
+        todo_json = Net::HTTP.get(uri)
+        edited_todo = JSON.parse(todo_json)
+        edited_todo_id = edited_todo["id"].to_s
+      end
     when "u"
       puts "Which Unfinished Todo Would you Like to Edit?"
       print "\n> "
       input = gets.chomp.to_i
 
-      marked_body = @incompleted_bodies[input - 1]
-      uri = URI("http://localhost:3000/todos?completed=false&body=#{marked_body}")
-      todo_json = Net::HTTP.get(uri)
-      marked_todo = JSON.parse(todo_json)
-      marked_todo_id = marked_todo["id"].to_s
+      edited_body = @incompleted_bodies[input - 1]
+      edited_todo_id = ""
+      if edited_body == ""
+        @null_body_todos.each do |null_body_todo|
+          edited_todo_id = null_body_todo["id"].to_s if null_body_todo["completed"] == true
+        end
+      else
+        uri = URI("http://localhost:3000/todos?completed=false&body=#{edited_body}")
+        todo_json = Net::HTTP.get(uri)
+        edited_todo = JSON.parse(todo_json)
+        edited_todo_id = edited_todo["id"].to_s
+      end
     else
       puts "Invalid Selection"
       sleep(0.5)
@@ -174,7 +196,7 @@ class TodoListTool
     params = {body: new_entry}
 
     http = Net::HTTP.new(uri.host, uri.port)
-    request = Net::HTTP::Put.new("/todos/#{marked_todo_id}")
+    request = Net::HTTP::Put.new("/todos/#{edited_todo_id}")
     request.set_form_data(params)
     http.request(request)
 
@@ -203,20 +225,34 @@ class TodoListTool
       input = gets.chomp.to_i
 
       deleted_body = @completed_bodies[input - 1]
-      uri = URI("http://localhost:3000/todos?completed=true&body=#{deleted_body}")
-      todo_json = Net::HTTP.get(uri)
-      deleted_todo = JSON.parse(todo_json)
-      deleted_todo_id = deleted_todo["id"].to_s
+      deleted_todo_id = ""
+      if deleted_body == ""
+        @null_body_todos.each do |null_body_todo|
+          deleted_todo_id = null_body_todo["id"].to_s if null_body_todo["completed"] == true
+        end
+      else
+        uri = URI("http://localhost:3000/todos?completed=true&body=#{deleted_body}")
+        todo_json = Net::HTTP.get(uri)
+        deleted_todo = JSON.parse(todo_json)
+        deleted_todo_id = deleted_todo["id"].to_s
+      end
     when "u"
       puts "Which Unfinished Todo Would you Like to Delete?"
       print "\n> "
       input = gets.chomp.to_i
 
       deleted_body = @incompleted_bodies[input - 1]
-      uri = URI("http://localhost:3000/todos?completed=false&body=#{deleted_body}")
-      todo_json = Net::HTTP.get(uri)
-      deleted_todo = JSON.parse(todo_json)
-      deleted_todo_id = deleted_todo["id"].to_s
+      deleted_todo_id = ""
+      if deleted_body == ""
+        @null_body_todos.each do |null_body_todo|
+          deleted_todo_id = null_body_todo["id"].to_s if null_body_todo["completed"] == false
+        end
+      else
+        uri = URI("http://localhost:3000/todos?completed=false&body=#{deleted_body}")
+        todo_json = Net::HTTP.get(uri)
+        deleted_todo = JSON.parse(todo_json)
+        deleted_todo_id = deleted_todo["id"].to_s
+      end
     else
       puts "Invalid Selection"
       sleep(0.5)
@@ -238,8 +274,9 @@ class TodoListTool
     todo_list = JSON.parse(todos_json)
     @completed_bodies = []
     @incompleted_bodies = []
+    @null_body_todos = []
     todo_list.each do |todo|
-      puts todo["body"].inspect
+      @null_body_todos << todo if todo["body"].nil? || todo["body"] == ""
       todo["completed"] ? @completed_bodies << todo["body"].to_s : @incompleted_bodies << todo["body"].to_s
     end
 
