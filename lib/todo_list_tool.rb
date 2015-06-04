@@ -174,7 +174,7 @@ class TodoListTool
       edited_todo_id = ""
       if edited_body == ""
         @null_body_todos.each do |null_body_todo|
-          edited_todo_id = null_body_todo["id"].to_s if null_body_todo["completed"] == true
+          edited_todo_id = null_body_todo["id"].to_s if null_body_todo["completed"] == false
         end
       else
         uri = URI("http://localhost:3000/todos?completed=false&body=#{edited_body}")
